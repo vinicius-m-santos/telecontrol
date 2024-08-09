@@ -6,10 +6,50 @@ use App\Models\Model;
 
 class Product extends Model
 {
+    private string $id = "";
     private string $code = "";
     private string $description = "";
     private string $status = "";
     private string $warrantyTime = "";
+
+    public function __construct(
+        string $code = '',
+        string $description = '', 
+        string $status = '', 
+        string $warrantyTime = '',
+        string $id = ''
+    )
+    {
+        $this->code = $code;
+        $this->description = $description;
+        $this->status = $status;
+        $this->warrantyTime = $warrantyTime;
+        $this->id = $id;
+
+        parent::__construct();
+    }
+
+    /**
+     * Get product id
+     * 
+     * @return string
+     */
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    /**
+     * Set product id
+     * 
+     * @param string $id
+     * @return $this
+     */
+    public function setId($id): self
+    {
+        $this->id = $id;
+        return $this;
+    }
 
     /**
      * Get product code
@@ -102,15 +142,130 @@ class Product extends Model
     /**
      * Saves model data to database
      *
-     * @return void
+     * @return string|bool
      */
-    public function save()
+    public function save(): string|bool
     {
-        parent::getConnection()->insert([
+        if (empty($this->getId())) {
+            return $this->insert();
+        } else {
+            return $this->update();
+        }
+    }
+
+    /**
+     * Get all products
+     *
+     * @return array
+     */
+    public function getAllProducts(): array
+    {
+        $result = $this->getConnection()->select(["*"], 'product');
+        if (count($result) === 0) {
+            return $result;
+        }
+
+        return $this->hydrateList($result);
+    }
+
+
+    /**
+     * Hydrates product list
+     *
+     * @param array $data
+     * @return array
+     */
+    public function hydrateList($data): array
+    {
+        $hydratedList = [];
+        foreach ($data as $item) {
+            $hydratedList[] = new Product(
+                $item['code'], 
+                $item['description'], 
+                $item['status'], 
+                $item['warranty_time'],
+                $item['id']
+            );
+        }
+
+        return $hydratedList;
+    }
+
+    /**
+     * Loads product by id
+     *
+     * @param string $id
+     * @return $this
+     */
+    public function load(string $id): self
+    {
+        $result = $this->getConnection()->select(["*"], 'product', "id = :id", ['id' => $id]);
+        if (count($result) === 0) {
+            return $this;
+        }
+
+        $product = array_pop($result);
+        $this->setCode($product['code']);
+        $this->setDescription($product['description']);
+        $this->setStatus($product['status']);
+        $this->setWarrantyTime($product['warranty_time']);
+        $this->setId($product['id']);
+        return $this;
+    }
+
+    /**
+     * Insert product
+     * 
+     * @return string|false
+     */
+    public function insert(): string|false
+    {
+        return $this->getConnection()->insert([
             'code' => $this->getCode(),
             'description' => $this->getDescription(),
             'status' => $this->getStatus(),
             'warranty_time' => $this->getWarrantyTime()
         ], 'product');
+    }
+
+    /**
+     * Updates product
+     *
+     * @return bool
+     */
+    public function update(): bool
+    {
+        return $this->getConnection()->update([
+            'code' => $this->getCode(),
+            'description' => $this->getDescription(),
+            'status' => $this->getStatus(),
+            'warranty_time' => $this->getWarrantyTime()
+        ], 'product', "id = :id", ['id' => $this->getId()]);
+    }
+
+    /**
+     * Deletes product
+     *
+     * @return bool
+     */
+    public function delete($id): bool
+    {
+        return $this->getConnection()->delete('product', "id = :id", ['id' => $id]);
+    }
+
+    /**
+     * Returns product as array
+     * 
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'code' => $this->getCode(),
+            'description' => $this->getDescription(),
+            'status' => $this->getStatus(),
+            'warranty_time' => $this->getWarrantyTime(),
+            'id' => $this->getId()
+        ];
     }
 }

@@ -34,8 +34,8 @@ $allClients = $client->getAllClients();
                             <td><?= $client->getCpf() ?></td>
                             <td><?= $client->getAddress() ?: 'Não informado' ?></td>
                             <td>
-                                <button class="btn btn-sm btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#clientModal" data-bs-action="save" data-bs-client-id="<?= $client->getId() ?>">Edit</button>
-                                <button class="btn btn-sm btn-danger fw-bold">Delete</button>
+                                <button class="btn btn-sm btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#clientModal" data-bs-action="save" data-bs-client-id="<?= $client->getId() ?>">Editar</button>
+                                <button class="btn btn-sm btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#clientDeleteModal" data-bs-action="delete" data-bs-client-id="<?= $client->getId() ?>">Excluir</button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -71,6 +71,27 @@ $allClients = $client->getAllClients();
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="clientDeleteModal" tabindex="-1" aria-labelledby="clientModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clientDeleteModalLabel">Excluir Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="client_delete_form">
+                    <input type="hidden" id="client_delete_form_action">
+                    <input type="hidden" id="clientDeleteId">
+                <div class="modal-body">
+                    <p>Deseja realmente excluir o cliente?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Excluir</button>
                 </div>
                 </form>
             </div>
