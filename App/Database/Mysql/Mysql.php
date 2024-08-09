@@ -140,7 +140,7 @@ class Mysql extends Database
         return $this->mysqlConn;
     }
 
-    public function select(array $params, string $table, string $where)
+    public function select(array $params, string $table, string $where = "", array $whereParams = [])
     {
         try {
             if (!isset($table) || $table == "") {
@@ -156,13 +156,14 @@ class Mysql extends Database
                 implode(", ", $params), 
                 $table
             );
+
+            if (!empty($where)) {
+                $query .= " WHERE $where";
+            }
     
-            if (isset($where)) {
-                $query .= " WHERE :conditions";
-                $stmt = $this->getConn()->prepare($query);
-                $stmt->bindParam(":conditions", $where);
-            } else {
-                $stmt = $this->getConn()->prepare($query);
+            $stmt = $this->getConn()->prepare($query);
+            foreach ($whereParams as $key => $value) {
+                $stmt->bindValue(":$key", $value);
             }
     
             $stmt->execute();
@@ -176,7 +177,14 @@ class Mysql extends Database
         }
     }
 
-    public function insert(array $params, string $table)
+    /**
+     * Inserts data into database
+     *
+     * @param array $params
+     * @param string $table
+     * @return string|false
+     */
+    public function insert(array $params, string $table): string|false
     {
         try {
             if (!isset($table) || $table == "") {
@@ -195,13 +203,13 @@ class Mysql extends Database
                 implode(", :", $keys)
             );
 
-
             $stmt = $this->getConn()->prepare($sql);
             foreach ($params as $index => $value) {
                 $stmt->bindValue(sprintf(":%s", $index), $value);
             }
     
              $stmt->execute();
+             return $this->getConn()->lastInsertId();
         } catch (PDOException $e) {
             echo sprintf(
                 "Code: %s \n Message: %s", 
@@ -211,7 +219,7 @@ class Mysql extends Database
         }
     }
 
-    public function update(array $params, string $table, string $where)
+    public function update(array $params, string $table, string $where, array $whereParams = [])
     {
         try {
             if (!isset($table) || $table == "") {
@@ -234,13 +242,25 @@ class Mysql extends Database
             $valuesToUpdate = trim($valuesToUpdate, ",");
 
             $sql = sprintf(
-                "UPDATE %s SET (%s) WHERE :conditions", 
+                "UPDATE %s SET %s", 
                 $table,
                 $valuesToUpdate
             );
 
+            if (!empty($where)) {
+                $sql .= " WHERE $where";
+            }
+    
             $stmt = $this->getConn()->prepare($sql);
-            $stmt->bindParam(":conditions", $where);
+
+            foreach ($params as $key => $value) {
+                $stmt->bindValue(":$key", $value);
+            }
+
+            foreach ($whereParams as $key => $value) {
+                $stmt->bindValue(":$key", $value);
+            }
+    
             return $stmt->execute();
         } catch (PDOException $e) {
             echo sprintf(
@@ -277,5 +297,35 @@ class Mysql extends Database
                 $e->getMessage()
             );
         }
+    }
+
+    /**
+     * Begin database transaction
+     *
+     * @return bool
+     */
+    public function beginTransaction(): bool
+    {
+        return $this->getConn()->beginTransaction();
+    }
+
+    /**
+     * Commit database transaction
+     *
+     * @return bool
+     */
+    public function commit(): bool
+    {
+        return $this->getConn()->commit();
+    }
+
+    /**
+     * Rollback database transaction
+     *
+     * @return bool
+     */
+    public function rollBack(): bool
+    {
+        return $this->getConn()->rollBack();
     }
 }
