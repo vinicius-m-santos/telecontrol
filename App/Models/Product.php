@@ -246,11 +246,11 @@ class Product extends Model
     /**
      * Deletes product
      *
-     * @return void
+     * @return bool
      */
-    public function delete()
+    public function delete($id): bool
     {
-        $this->getConnection()->delete('product', ['id' => $this->getId()]);
+        return $this->getConnection()->delete('product', "id = :id", ['id' => $id]);
     }
 
     /**

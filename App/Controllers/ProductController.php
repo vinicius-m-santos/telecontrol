@@ -3,7 +3,7 @@
 require_once '../../autoload.php';
 
 use App\Models\Product;
-
+use App\Models\ServiceOrder;
 
 try {
     if (!isset($_POST['action'])) {
@@ -57,6 +57,39 @@ switch ($action) {
         }
     break;
     case 'delete':
+        try {
+            $response = [
+                "success" => true,
+                "code" => 200
+            ];
+
+            if (!isset($_POST['params'])) {
+                throw new Exception("Params are required", 400);
+            }
+    
+            $params = json_decode($_POST['params'], true);
+            if (!isset($params['productId'])) {
+                throw new Exception("Product id is required", 400);
+            }
+
+            $serviceOrder = new ServiceOrder();
+            $result = $serviceOrder->findByProductId($params['productId']);
+            if ($result && count($result) > 0) {
+                throw new Exception("Product has service orders", 400);
+            }
+    
+            $product = new Product();
+            $result = $product->delete($params['productId']);
+            if (!$result) {
+                throw new Exception("Failed to delete product", 400);
+            }
+        } catch (Exception $e) {
+            $response["success"] = false;
+            $response["message"] = $e->getMessage();
+            $response["code"] = $e->getCode() ?: 400;
+        } finally {
+            echo json_encode($response);
+        }
     break;
     case 'load':
         try {
