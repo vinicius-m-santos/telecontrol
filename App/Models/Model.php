@@ -16,13 +16,10 @@ abstract class Model
     /**
      * Loads an entity from database
      * 
-     * @return array
+     * @param string $id
+     * @return $this
      */
-    public function load($id): array
-    {
-        // $query = "SELECT * FROM "
-        return [];
-    }
+    abstract function load(string $id): self;
 
     /**
      * Saves model data to database
