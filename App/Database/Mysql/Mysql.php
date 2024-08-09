@@ -28,7 +28,12 @@ class Mysql extends Database
         $this->connect();
     }
 
-    protected function connect()
+    /**
+     * Connects to database
+     *
+     * @return void
+     */
+    protected function connect(): void
     {
         try {
             $mysqlConn = new PDO(sprintf(
@@ -140,7 +145,16 @@ class Mysql extends Database
         return $this->mysqlConn;
     }
 
-    public function select(array $params, string $table, string $where = "", array $whereParams = [])
+    /**
+     * Select data from database
+     *
+     * @param array $params
+     * @param string $table
+     * @param string $where
+     * @param array $whereParams
+     * @return array
+     */
+    public function select(array $params, string $table, string $where = "", array $whereParams = []): array
     {
         try {
             if (!isset($table) || $table == "") {
@@ -219,7 +233,17 @@ class Mysql extends Database
         }
     }
 
-    public function update(array $params, string $table, string $where, array $whereParams = [])
+    /**
+     * Updates data in database
+     * 
+     * @param array $params
+     * @param string $table
+     * @param string $where
+     * @param array $whereParams
+     * @return bool
+     * @throws PDOException
+     */
+    public function update(array $params, string $table, string $where, array $whereParams = []): bool
     {
         try {
             if (!isset($table) || $table == "") {
@@ -271,7 +295,15 @@ class Mysql extends Database
         }
     }
 
-    public function delete(string $table, string $where)
+    /**
+     * Deletes data from database
+     *
+     * @param string $table
+     * @param string $where
+     * @param array $whereParams
+     * @return bool
+     */
+    public function delete(string $table, string $where, array $whereParams = []): bool
     {
         try {
             if (!isset($table) || $table == "") {
@@ -283,19 +315,26 @@ class Mysql extends Database
             }
             
             $sql = sprintf(
-                "DELETE FROM (%s) WHERE :conditions", 
-                $table
+                "DELETE FROM %s WHERE %s", 
+                $table,
+                $where
             );
-
+    
             $stmt = $this->getConn()->prepare($sql);
-            $stmt->bindParam(":conditions", $where);
+
+            foreach ($whereParams as $key => $value) {
+                $stmt->bindValue(":$key", $value);
+            }
+            
             return $stmt->execute();
         } catch (PDOException $e) {
+            // Implement logs in future release
             echo sprintf(
                 "Code: %s \n Message: %s", 
                 $e->getCode() ?: 400, 
                 $e->getMessage()
             );
+            return false;
         }
     }
 

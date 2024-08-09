@@ -213,11 +213,11 @@ class Client extends Model
     /**
      * Deletes client
      *
-     * @return void
+     * @return bool
      */
-    public function delete()
-    {
-        $this->getConnection()->delete('client', ['id' => $this->getId()]);
+    public function delete($id): bool
+    {   
+        return $this->getConnection()->delete('client', 'id = :id', ['id' => $id]);
     }
 
     /**

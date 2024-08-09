@@ -223,10 +223,48 @@ class ServiceOrder extends Model
         return $this;
     }
 
-    public function findByCpf($cpf): array
+    /**
+     * Finds service orders by client cpf
+     *
+     * @param string $cpf
+     * @return array
+     */
+    public function findClientByCpf($cpf): array
     {
         $client = new Client();
         return $client->findByCpf($cpf);
+    }
+
+    /**
+     * Finds service orders by client id
+     *
+     * @param string $id
+     * @return array
+     */
+    public function findByClientId($id): array
+    {
+        return $this->getConnection()->select(
+            ['*'], 
+            'service_order', 
+            "consumer_id = :id", 
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * Finds service orders by product id
+     *
+     * @param string $id
+     * @return array
+     */
+    public function findByProductId($id): array
+    {
+        return $this->getConnection()->select(
+            ['*'], 
+            'service_order_product', 
+            "product_id = :id", 
+            ['id' => $id]
+        );
     }
 
     /**
@@ -244,11 +282,67 @@ class ServiceOrder extends Model
     /**
      * Saves model data to database
      *
-     * @return void
+     * @return string|bool
      */
     public function save()
     {
-        $client = $this->findByCpf($this->getConsumerCpf());
+        if (empty($this->getId())) {
+            return $this->insert();
+        } else {
+            return $this->update();
+        }
+    }
+
+    public function update()
+    {
+        $client = $this->findClientByCpf($this->getConsumerCpf());
+        if (count($client) > 0) {
+            $this->setConsumerId($client['id']);
+        } else {
+            $clientId = $this->createClientByCpf(
+                $this->getConsumerCpf(),
+                $this->getConsumerName()
+            );
+            $this->setConsumerId($clientId);
+        }
+
+        try {
+            $this->getConnection()->beginTransaction();
+    
+
+            $this->getConnection()->delete(
+                'service_order_product', 
+                'service_order_id = :service_order_id', 
+                ['service_order_id' => $this->getId()]
+            );
+
+            $this->getConnection()->update([
+                    'order_number' => $this->getOrderNumber(),
+                    'opening_date' => $this->getOpeningDate(),
+                    'consumer_id' => $this->getConsumerId(),
+                    'consumer_name' => $this->getConsumerName(),
+                    'consumer_cpf' => $this->getConsumerCpf()
+                ], 
+                'service_order',
+                "id = :id",
+                ['id' => $this->getId()]
+            );
+
+            $products = $this->getProducts();
+            foreach ($products as $product) {
+                $this->saveProduct($product->getId(), $this->getId());
+            }
+
+            $this->getConnection()->commit();
+        } catch (Exception $e) {
+            $this->getConnection()->rollback();
+            throw $e;
+        }
+    }
+
+    public function insert()
+    {
+        $client = $this->findClientByCpf($this->getConsumerCpf());
         if (count($client) > 0) {
             $this->setConsumerId($client['id']);
         } else {
@@ -384,8 +478,65 @@ class ServiceOrder extends Model
         $this->setId($serviceOrder['id']);
 
         $products = $this->loadRelatedProducts($serviceOrder['id']);
-        $serviceOrder->setProducts($products);
+        $this->setProducts($products);
 
         return $this;
+    }
+
+    /**
+     * Returns service order as array
+     * 
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'order_number' => $this->getOrderNumber(),
+            'opening_date' => $this->getOpeningDate(),
+            'consumer_id' => $this->getConsumerId(),
+            'consumer_name' => $this->getConsumerName(),
+            'consumer_cpf' => $this->getConsumerCpf(),
+            'id' => $this->getId(),
+            'products' => $this->getProductsIds()
+        ];
+    }
+
+    /**
+     * Return products ids
+     *
+     * @return array
+     */
+    private function getProductsIds(): array
+    {
+        $products = $this->getProducts();
+        $productsIds = [];
+        foreach ($products as $product) {
+            $productsIds[] = $product->getId();
+        }
+        return $productsIds;
+    }
+
+    /**
+     * Deletes service order
+     *
+     * @return bool
+     */
+    public function delete($id): bool
+    {   
+        try {
+            $this->getConnection()->beginTransaction();
+            $this->getConnection()->delete(
+                'service_order_product', 
+                'service_order_id = :service_order_id', 
+                ['service_order_id' => $id]
+            );
+    
+            $this->getConnection()->delete('service_order', 'id = :id', ['id' => $id]);
+            $this->getConnection()->commit();
+
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }

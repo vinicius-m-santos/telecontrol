@@ -29,23 +29,93 @@ try {
 
 switch ($action) {
     case 'save':
-        validateServiceOrderData($params);
-        $serviceOrder = new ServiceOrder();
-        $serviceOrder->setOrderNumber($params['orderNumber']);
-        $serviceOrder->setOpeningDate($params['openingDate']);
-        $serviceOrder->setConsumerName($params['consumerName']);
-        $serviceOrder->setConsumerCpf($params['consumerCpf']);
-        if (!isset($params['products'])) {
-            throw new Exception ("Product is required", 400);
+        try {
+            $response = [
+                "success" => true,
+                "code" => 200
+            ];
+
+            validateServiceOrderData($params);
+            $serviceOrder = new ServiceOrder();
+            if (isset($params['serviceOrderId'])) {
+                $serviceOrder->setId($params['serviceOrderId']);
+            }
+            $serviceOrder->setOrderNumber($params['orderNumber']);
+            $serviceOrder->setOpeningDate($params['openingDate']);
+            $serviceOrder->setConsumerName($params['consumerName']);
+            $serviceOrder->setConsumerCpf($params['consumerCpf']);
+            if (!isset($params['products'])) {
+                throw new Exception ("Product is required", 400);
+            }
+            foreach ($params['products'] as $productId) {
+                $product = new Product();
+                $product->setId($productId);
+                $serviceOrder->addProduct($product);
+            }
+            $serviceOrder->save();
+        } catch (Exception $e) {
+            $response["success"] = false;
+            $response["message"] = $e->getMessage();
+            $response["code"] = $e->getCode() ?: 400;
+        } finally {
+            echo json_encode($response);
         }
-        foreach ($params['products'] as $productId) {
-            $product = new Product();
-            $product->setId($productId);
-            $serviceOrder->addProduct($product);
-        }
-        $serviceOrder->save();
     break;
     case 'delete':
+        try {
+            $response = [
+                "success" => true,
+                "code" => 200
+            ];
+
+            if (!isset($_POST['params'])) {
+                throw new Exception("Params are required", 400);
+            }
+    
+            $params = json_decode($_POST['params'], true);
+            if (!isset($params['serviceOrderId'])) {
+                throw new Exception("Service Order id is required", 400);
+            }
+
+            $serviceOrder = new ServiceOrder();
+            $result = $serviceOrder->delete($params['serviceOrderId']);
+    
+            if (!$result) {
+                throw new Exception("Failed to delete service order", 400);
+            }
+        } catch (Exception $e) {
+            $response["success"] = false;
+            $response["message"] = $e->getMessage();
+            $response["code"] = $e->getCode() ?: 400;
+        } finally {
+            echo json_encode($response);
+        }
+    break;
+    case 'load':
+        try {
+            $response = [
+                "success" => true,
+                "code" => 200
+            ];
+
+            if (!isset($_POST['params'])) {
+                throw new Exception("Params are required", 400);
+            }
+    
+            $params = json_decode($_POST['params'], true);
+            if (!isset($params['id'])) {
+                throw new Exception("Service Order id is required", 400);
+            }
+    
+            $serviceOrder = new ServiceOrder();
+            $response["service_order"] = $serviceOrder->load($params['id'])->toArray();
+        } catch (Exception $e) {
+            $response["success"] = false;
+            $response["message"] = $e->getMessage();
+            $response["code"] = $e->getCode() ?: 400;
+        } finally {
+            echo json_encode($response);
+        }
     break;
     case 'default':
         throw new Exception('Action is required', 400);

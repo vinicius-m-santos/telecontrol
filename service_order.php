@@ -52,8 +52,8 @@ $allServiceOrders = $serviceOrder->getAllServiceOrders();
                                 ?>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#serviceOrderModal" data-bs-action="save" data-bs-product-id="<?=$product->getId()?>">Edit</button>
-                                <button class="btn btn-sm btn-danger fw-bold">Delete</button>
+                                <button class="btn btn-sm btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#serviceOrderModal" data-bs-action="save" data-bs-service-order-id="<?=$serviceOrder->getId()?>">Editar</button>
+                                <button class="btn btn-sm btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#serviceOrderDeleteModal" data-bs-action="delete" data-bs-service-order-id="<?= $serviceOrder->getId() ?>">Excluir</button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -93,8 +93,16 @@ $allServiceOrders = $serviceOrder->getAllServiceOrders();
                             <label for="products" class="form-label">Produto(s)</label>
                             <select class="form-select" id="products" multiple required>
                                 <option selected>Selecione o(s) produto(s)</option>
-                                <option value="1">Prod1</option>
-                                <option value="2">Prod2</option>
+                                <?php
+                                    use App\Models\Product;
+
+                                    $product = new Product();
+                                    /** @var Product[] $allProducts */
+                                    $allProducts = $product->getAllProducts();
+                                    foreach ($allProducts as $product):
+                                ?>
+                                <option value="<?= $product->getId() ?>"><?= $product->getCode() ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                 </div>
@@ -103,6 +111,27 @@ $allServiceOrders = $serviceOrder->getAllServiceOrders();
                     <button type="submit" class="btn btn-primary">Salvar</button>
                 </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="serviceOrderDeleteModal" tabindex="-1" aria-labelledby="serviceOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="serviceOrderDeleteModalLabel">Excluir Ordem de Serviço</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="client_delete_form">
+                    <input type="hidden" id="service_order_delete_form_action">
+                    <input type="hidden" id="serviceOrderDeleteId">
+                <div class="modal-body">
+                    <p>Deseja realmente excluir a ordem de serviço?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </div>
+                </form> 
             </div>
         </div>
     </div>
